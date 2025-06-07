@@ -7,7 +7,6 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-green-50 to-white pt-16 pb-24 md:pt-24 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden z-0">
@@ -27,12 +26,12 @@ export default function HomePage() {
                 blockchain-backed donations. Every contribution creates opportunity.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Link href="/donate">
+                <Link href="/donate" legacyBehavior>
                   <span className="inline-block px-6 py-3 text-base font-medium text-white bg-green-700 hover:bg-green-800 rounded-md shadow-md transition-all">
                     Make a Donation
                   </span>
                 </Link>
-                <Link href="/schools">
+                <Link href="/schools" legacyBehavior>
                   <span className="inline-block px-6 py-3 text-base font-medium text-green-700 border border-green-700 hover:bg-green-50 rounded-md shadow-sm transition-all">
                     Register Your School
                   </span>
@@ -60,7 +59,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* Impact Section */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,7 +100,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* How It Works Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +163,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-green-700 to-green-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -179,12 +175,12 @@ export default function HomePage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/donate">
+              <Link href="/donate" legacyBehavior>
                 <span className="inline-block px-6 py-3 text-base font-medium text-green-700 bg-white hover:bg-gray-100 rounded-md shadow-md transition-all text-center w-full sm:w-auto">
                   Donate Now
                 </span>
               </Link>
-              <Link href="/schools">
+              <Link href="/schools" legacyBehavior>
                 <span className="inline-block px-6 py-3 text-base font-medium text-white border border-white hover:bg-green-600 rounded-md shadow-sm transition-all text-center w-full sm:w-auto">
                   Register a School
                 </span>
@@ -193,7 +189,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <Footer />
     </div>
   );
