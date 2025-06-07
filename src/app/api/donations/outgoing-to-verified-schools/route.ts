@@ -1,11 +1,12 @@
 // src/app/api/donations/outgoing-to-verified-schools/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import * as xrpl from 'xrpl';
+import { AccountTxTransaction, Transaction, Payment } from 'xrpl';
 import { supabase } from '@/lib/supabaseClient'; // Your Supabase client
 
 const XRPL_NODE_URL = process.env.XRPL_NODE_URL || 'wss://s.altnet.rippletest.net:51233';
 const DONATION_ADDRESS = process.env.NEXT_PUBLIC_DONATION_ADDRESS;
-const XRP_TO_DROPS_CONVERSION = 1000000;
+
 const EXPLORER_BASE_URL = 'https://testnet.xrpl.org/transactions/';
 
 interface VerifiedSchoolTransaction {
@@ -18,7 +19,7 @@ interface VerifiedSchoolTransaction {
   explorerUrl: string;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   if (!DONATION_ADDRESS) {
     console.error('API_OUTGOING_VERIFIED: Donation address (NEXT_PUBLIC_DONATION_ADDRESS) is not configured.');
     return NextResponse.json({ error: 'Donation address is not configured.' }, { status: 500 });
@@ -46,26 +47,25 @@ export async function GET(req: NextRequest) {
     }
 
     const potentialSchoolDestinations = new Set<string>();
-    const rawTransactionsMap = new Map<string, any[]>(); // Store raw tx by destination for later filtering
+    const rawTransactionsMap = new Map<string, AccountTxTransaction[]>(); // Store raw tx by destination for later filtering
 
-    for (const txEntry of response.result.transactions) {
-      const tx = (txEntry.tx_json || txEntry.tx) as any; // tx_json is preferred if available
-      const meta = txEntry.meta as xrpl.TransactionMetadata;
+    for (const txEntry of response.result.transactions as AccountTxTransaction[]) {
+      const tx = (txEntry.tx_json || txEntry.tx) as Transaction;
 
       if (
         tx &&
         tx.TransactionType === 'Payment' &&
-        tx.Account === DONATION_ADDRESS && // Ensure it's an outgoing payment
-        tx.Destination &&
-        meta && meta.TransactionResult === 'tesSUCCESS'
+        (tx as Payment).Account === DONATION_ADDRESS &&
+        (tx as Payment).Destination &&
+        (tx as Payment).Destination !== DONATION_ADDRESS
       ) {
-        potentialSchoolDestinations.add(tx.Destination);
+        potentialSchoolDestinations.add((tx as Payment).Destination);
         // Store the full transaction entry temporarily, keyed by its hash for uniqueness
         // or by destination if we only care about the latest to a specific school (less likely for this use case)
         // For now, let's store all relevant ones and filter later.
         // We'll need to map back from verified addresses to these transactions.
-        if (!rawTransactionsMap.has(tx.Destination)) {
-            rawTransactionsMap.set(tx.Destination, []);
+        if (!rawTransactionsMap.has((tx as Payment).Destination)) {
+            rawTransactionsMap.set((tx as Payment).Destination, []);
         }
         rawTransactionsMap.get(tx.Destination)!.push(txEntry); // Added non-null assertion
       }
@@ -103,8 +103,8 @@ export async function GET(req: NextRequest) {
     verifiedSchoolMap.forEach((schoolName, walletAddress) => {
         const schoolTransactions = rawTransactionsMap.get(walletAddress);
         if (schoolTransactions) {
-            for (const txEntry of schoolTransactions) {
-                const tx = (txEntry.tx_json || txEntry.tx) as any;
+            for (const txEntry of schoolTransactions as AccountTxTransaction[]) {
+                const tx = (txEntry.tx_json || txEntry.tx) as Payment;
                 const meta = txEntry.meta as xrpl.TransactionMetadata;
                 
                 let amountStr = 'N/A';
@@ -112,11 +112,11 @@ export async function GET(req: NextRequest) {
                 const deliveredAmount = meta.delivered_amount || meta.DeliveredAmount;
 
                 if (typeof deliveredAmount === 'string') {
-                    amountStr = xrpl.dropsToXrp(deliveredAmount);
+                    amountStr = String(xrpl.dropsToXrp(deliveredAmount));
                     currencyStr = 'XRP';
                 } else if (typeof deliveredAmount === 'object' && deliveredAmount !== null) {
                     const typedDeliveredAmount = deliveredAmount as xrpl.IssuedCurrencyAmount;
-                    amountStr = typedDeliveredAmount.value;
+                    amountStr = String(typedDeliveredAmount.value);
                     const currencyCode = typedDeliveredAmount.currency;
                     if (currencyCode.length === 40) { // Potentially a hex-encoded currency
                         try {
@@ -154,10 +154,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(outgoingTransactionsToVerified.slice(0, 20)); // Return up to 20 recent ones
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const generalErrorMessage = error instanceof Error ? error.message : 'An unknown general error occurred';
     console.error(`API_OUTGOING_VERIFIED: General error for ${DONATION_ADDRESS}:`, error);
     return NextResponse.json(
-      { error: 'Failed to fetch outgoing transactions to verified schools.', details: error.message },
+      { error: 'Failed to fetch outgoing transactions to verified schools.', details: generalErrorMessage },
       { status: 500 }
     );
   } finally {

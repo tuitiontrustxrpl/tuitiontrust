@@ -81,7 +81,8 @@ export async function GET() {
         const signed = wallet.sign(prepared);
         const txResult = await client.submitAndWait(signed.tx_blob);
 
-        if (txResult.result.meta?.TransactionResult === 'tesSUCCESS') {
+        const meta = txResult.result.meta;
+        if (typeof meta === 'object' && meta && meta.TransactionResult === 'tesSUCCESS') {
           console.log(`CREATE_FAKE_TRUSTLINES: Successfully set trustline for ${fw.name} (${wallet.address}). Tx Hash: ${signed.hash}`);
           results.push({
             name: fw.name,
@@ -91,28 +92,30 @@ export async function GET() {
             txHash: signed.hash
           });
         } else {
-          console.error(`CREATE_FAKE_TRUSTLINES: Failed to set trustline for ${fw.name} (${wallet.address}). Result: ${txResult.result.meta?.TransactionResult}`, txResult);
+          console.error(`CREATE_FAKE_TRUSTLINES: Failed to set trustline for ${fw.name} (${wallet.address}). Result: ${typeof meta === 'object' && meta ? meta.TransactionResult : 'N/A (meta not an object)'}`, txResult);
           results.push({
             name: fw.name,
             address: wallet.address,
             status: 'failed',
-            message: `Failed: ${txResult.result.meta?.TransactionResult || 'Unknown error'}`,
+            message: `Failed: ${typeof meta === 'object' && meta ? meta.TransactionResult : 'Unknown error (meta not an object)'}`,
             details: txResult.result
           });
         }
-      } catch (walletError: any) {
+      } catch (walletError: unknown) {
+        const walletErrorMessage = walletError instanceof Error ? walletError.message : 'An unknown error occurred during wallet processing';
         console.error(`CREATE_FAKE_TRUSTLINES: Error processing wallet ${fw.name} (${fw.address}):`, walletError);
         results.push({
           name: fw.name,
           address: fw.address,
           status: 'error',
-          message: walletError.message || 'An unexpected error occurred.'
+          message: walletErrorMessage
         });
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const generalErrorMessage = error instanceof Error ? error.message : 'An unknown general error occurred';
     console.error('CREATE_FAKE_TRUSTLINES: General error:', error);
-    return NextResponse.json({ error: 'Failed to connect to XRPL or general error.', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to connect to XRPL or general error.', details: generalErrorMessage }, { status: 500 });
   } finally {
     if (client.isConnected()) {
       await client.disconnect();

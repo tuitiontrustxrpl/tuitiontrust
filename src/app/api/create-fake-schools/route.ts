@@ -28,7 +28,7 @@ function getRandomElement<T>(arr: T[]): T {
 
 function generateRandomSchoolName(): string {
   // Construct a more varied name
-  let nameParts = [];
+  const nameParts = [];
   nameParts.push(getRandomElement(POSSIBLE_SCHOOL_PREFIXES));
   if (Math.random() > 0.3) { // 70% chance to add a main part
     nameParts.push(getRandomElement(POSSIBLE_SCHOOL_MAINS));
@@ -124,8 +124,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ message: responseMessage, schools_created: data, num_created: numCreated, num_skipped: numSkipped }, { status: 201 });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
     console.error('Unexpected server error:', e);
-    return NextResponse.json({ message: 'An unexpected server error occurred', error: e.message }, { status: 500 });
+    return NextResponse.json({ message: 'An unexpected server error occurred', error: errorMessage }, { status: 500 });
   }
 }

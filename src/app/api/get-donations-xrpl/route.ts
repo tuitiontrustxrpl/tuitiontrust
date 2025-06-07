@@ -1,6 +1,6 @@
 // src/app/api/get-donations-xrpl/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Payment, TransactionMetadata } from 'xrpl';
+import { Client, TransactionMetadata, convertHexToString } from 'xrpl';
 
 export interface Donation {
   id: string;
@@ -17,7 +17,7 @@ const DONATION_ADDRESS = process.env.NEXT_PUBLIC_DONATION_ADDRESS;
 // const RLUSD_CURRENCY_CODE = process.env.NEXT_PUBLIC_RLUSD_CURRENCY_CODE; // Commented out as not directly used in simplified logic
 // const RLUSD_ISSUER_ADDRESS = process.env.NEXT_PUBLIC_RLUSD_ISSUER_ADDRESS; // Commented out as not directly used in simplified logic
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   if (!DONATION_ADDRESS) {
     console.error('GET_DONATIONS_XRPL: Donation address is not configured.');
     return NextResponse.json({ error: 'Donation address is not configured.' }, { status: 500 });
@@ -105,8 +105,14 @@ export async function GET(req: NextRequest) {
       } else if (typeof deliveredAmount === 'object' && deliveredAmount !== null && 'value' in deliveredAmount && 'currency' in deliveredAmount) {
         // IOU payment
         parsedAmount = (deliveredAmount as { value: string; currency: string }).value;
-        parsedCurrency = (deliveredAmount as { value: string; currency: string }).currency;
-        console.log(`GET_DONATIONS_XRPL: Processed IOU payment: ${parsedAmount} ${parsedCurrency} from ${tx.Account}`);
+        const rawCurrency = (deliveredAmount as { value: string; currency: string }).currency;
+        // Standard currency codes are 3 characters. Hex-encoded non-standard codes are 40 characters.
+        if (rawCurrency.length === 40 && /^[0-9A-Fa-f]+$/.test(rawCurrency)) {
+          parsedCurrency = convertHexToString(rawCurrency).replace(/\0/g, ''); // Remove null terminators
+        } else {
+          parsedCurrency = rawCurrency;
+        }
+        console.log(`GET_DONATIONS_XRPL: Processed IOU payment: ${parsedAmount} ${parsedCurrency} (raw: ${rawCurrency}) from ${tx.Account}`);
       } else {
         console.log(`GET_DONATIONS_XRPL: Skipping transaction with hash ${txEntry.hash || 'N/A'} due to unhandled or missing delivered_amount format. delivered_amount:`, deliveredAmount);
         continue;
@@ -125,9 +131,15 @@ export async function GET(req: NextRequest) {
     console.log(`GET_DONATIONS_XRPL: Processed and returning ${displayedDonations.length} donations.`);
     return NextResponse.json(displayedDonations);
 
-  } catch (error: any) {
-    console.error('GET_DONATIONS_XRPL: Error fetching donations from XRPL:', error.message, error.data || error);
-    return NextResponse.json({ error: 'Failed to fetch donations from XRPL.', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    let errorMessage = 'An unknown error occurred.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as any).message === 'string') {
+      errorMessage = (error as any).message;
+    }
+    console.error('GET_DONATIONS_XRPL: Error fetching donations from XRPL:', errorMessage, error);
+    return NextResponse.json({ error: 'Failed to fetch donations from XRPL.', details: errorMessage }, { status: 500 });
   } finally {
     if (xrplClient.isConnected()) {
       await xrplClient.disconnect();

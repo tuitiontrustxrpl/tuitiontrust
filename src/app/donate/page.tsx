@@ -1,6 +1,7 @@
 "use client";
 
-import { QRCodeCanvas } from 'qrcode.react';
+import dynamic from 'next/dynamic';
+const QRCodeCanvas = dynamic(() => import('qrcode.react').then(mod => mod.QRCodeCanvas), { ssr: false });
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -118,22 +119,34 @@ export default function DonatePage() {
       
       <main className="flex-grow bg-gradient-to-b from-green-50 to-white py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Make a Donation</h1>
-            <p className="text-lg text-gray-700">
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               Your contribution directly supports underprivileged schools and creates opportunities for students.
             </p>
           </div>
 
+          {/* How to Donate Instructions */}
+          <div className="bg-gradient-to-br from-green-50 to-white p-6 rounded-lg shadow-sm border border-green-100 mb-8 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800">How to Donate</h2>
+            <ol className="list-decimal pl-5 space-y-2 text-gray-700">
+              <li>Open your XRP Ledger wallet app (Xumm, Crossmark, etc.)</li>
+              <li>Scan the QR code below</li>
+              <li>Confirm the transaction details in your wallet</li>
+              <li>Submit the payment</li>
+            </ol>
+            <p className="mt-4 text-sm text-gray-600 text-center">All donations are transparent and trackable on the XRP Ledger.</p>
+          </div>
+          
           {/* Preset Donation Buttons */}
-          <div className="my-6 w-full">
-            <div className="mb-4">
-              <p className="text-center text-gray-700 font-medium mb-2">Select RLUSD Amount:</p>
-              <div className="flex flex-wrap justify-center gap-2">
+          <div className="my-8 w-full max-w-lg mx-auto">
+            <div className="mb-6">
+              <p className="text-center text-gray-700 font-medium mb-3">Select RLUSD Amount:</p>
+              <div className="flex flex-wrap justify-center gap-3">
                 {RLUSD_PRESETS.map((amount) => (
                   <button
                     key={`rlusd-${amount}`}
-                    className={`px-4 py-2 rounded-lg ${selectedPreset && selectedPreset.currency === 'RLUSD' && selectedPreset.amount === amount
+                    className={`px-5 py-2 rounded-lg ${selectedPreset && selectedPreset.currency === 'RLUSD' && selectedPreset.amount === amount
                       ? 'bg-green-600 text-white font-semibold shadow-md'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-green-300 transition-colors'
                       }`}
@@ -145,14 +158,14 @@ export default function DonatePage() {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-xl font-medium mb-3 text-gray-800">Donate XRP</h3>
-              <div className="flex flex-wrap justify-center gap-2">
+            <div className="mb-4">
+              <p className="text-center text-gray-700 font-medium mb-3">Donate XRP:</p>
+              <div className="flex flex-wrap justify-center gap-3">
                 {XRP_PRESETS.map((amount) => (
                   <button
                     key={`xrp-${amount}`}
                     onClick={() => handlePresetClick(amount, 'XRP')}
-                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors
+                    className={`px-5 py-2 border rounded-md text-sm font-medium transition-colors
                       ${selectedPreset?.currency === 'XRP' && selectedPreset?.amount === amount
                         ? 'bg-green-500 text-white border-green-500'
                         : 'bg-white text-green-600 border-green-300 hover:bg-green-50'
@@ -164,82 +177,89 @@ export default function DonatePage() {
               </div>
             </div>
             {selectedPreset && (
-              <button 
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors mt-6 font-medium"
-                onClick={() => setSelectedPreset(null)}
-              >
-                Clear Selection
-              </button>
+              <div className="text-center mt-4">
+                <button 
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  onClick={() => setSelectedPreset(null)}
+                >
+                  Clear Selection
+                </button>
+              </div>
             )}
           </div>
 
           {/* QR Code Display */}
-          <div className="bg-white p-8 rounded-xl shadow-md mb-10 border border-green-100">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Scan to Donate</h2>
+          <div className="bg-gradient-to-b from-white to-green-50 p-8 rounded-xl shadow-md mb-10 border border-green-100 text-center max-w-md mx-auto">
+            <h2 className="text-2xl font-semibold mb-5 text-gray-800">Scan to Donate</h2>
             {envWarning && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
+              <div className="mb-5 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
                 <p>{envWarning}</p>
               </div>
             )}
-            {currentQrCodeUri && DONATION_ADDRESS ? (
-              <div className="mb-4 p-2 border border-gray-200 rounded-md inline-block">
-                <QRCodeCanvas 
-                  value={currentQrCodeUri} 
-                  size={256}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                  level="Q"
-                  includeMargin={true}
-                />
-              </div>
-            ) : (
-              <div className="mb-4 p-10 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col items-center">
-                <p className="text-lg font-medium text-gray-500">QR Code cannot be displayed.</p>
-                <p className="text-sm text-gray-400">{DONATION_ADDRESS ? 'Error generating QR.' : 'Configuration missing.'}</p>
-              </div>
-            )}
-            <p className="text-sm text-gray-600 mb-2 text-center">
-              Scan with your XRPL-compatible wallet to donate <span className="font-semibold">
-                {selectedPreset ? selectedPreset.displayAmount : DISPLAY_CURRENCY_CODE}
-              </span>.
-            </p>
-            <p className="text-xs text-gray-500 break-all text-center">
-              Address: <span className="font-mono">{DONATION_ADDRESS || 'N/A'}</span>
-            </p>
-            { (selectedPreset?.currency === 'RLUSD' || (!selectedPreset && RLUSD_ISSUER_ADDRESS && HEX_CURRENCY_CODE)) && (
-              <p className="text-xs text-gray-500 break-all text-center">
-                Issuer: <span className="font-mono">{RLUSD_ISSUER_ADDRESS}</span>
+            <div className="flex justify-center">
+              {currentQrCodeUri && DONATION_ADDRESS ? (
+                <div className="mb-5 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                  <QRCodeCanvas 
+                    value={currentQrCodeUri} 
+                    size={240}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    level="Q"
+                    includeMargin={true}
+                  />
+                </div>
+              ) : (
+                <div className="mb-5 p-10 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col items-center">
+                  <p className="text-lg font-medium text-gray-500">QR Code cannot be displayed.</p>
+                  <p className="text-sm text-gray-400">{DONATION_ADDRESS ? 'Error generating QR.' : 'Configuration missing.'}</p>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                Scan with your XRPL-compatible wallet to donate <span className="font-semibold">
+                  {selectedPreset ? selectedPreset.displayAmount : DISPLAY_CURRENCY_CODE}
+                </span>
               </p>
-            )}
-            <p className="mt-3 text-red-600 text-xs font-semibold text-center">
-              IMPORTANT: Ensure your wallet supports sending
-              {selectedPreset ? ` ${selectedPreset.displayAmount}` : ` ${DISPLAY_CURRENCY_CODE}`}
-              { (selectedPreset?.currency === 'RLUSD' || (!selectedPreset && RLUSD_ISSUER_ADDRESS && HEX_CURRENCY_CODE)) && ` to this address and issuer`}
-              { selectedPreset?.currency === 'XRP' && ` to this address`}.
-            </p>
+              <p className="text-xs text-gray-500 break-all">
+                Address: <span className="font-mono">{DONATION_ADDRESS || 'N/A'}</span>
+              </p>
+              {(selectedPreset?.currency === 'RLUSD' || (!selectedPreset && RLUSD_ISSUER_ADDRESS && HEX_CURRENCY_CODE)) && (
+                <p className="text-xs text-gray-500 break-all">
+                  Issuer: <span className="font-mono">{RLUSD_ISSUER_ADDRESS}</span>
+                </p>
+              )}
+              <p className="mt-3 text-red-600 text-xs font-semibold">
+                IMPORTANT: Ensure your wallet supports sending
+                {selectedPreset ? ` ${selectedPreset.displayAmount}` : ` ${DISPLAY_CURRENCY_CODE}`}
+                {(selectedPreset?.currency === 'RLUSD' || (!selectedPreset && RLUSD_ISSUER_ADDRESS && HEX_CURRENCY_CODE)) && ` to this address and issuer`}
+                {selectedPreset?.currency === 'XRP' && ` to this address`}.
+              </p>
+            </div>
           </div>
 
           {/* Donation History Section */}
-          <div className="mt-12 w-full">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Recent Donations</h2>
+          <div className="mt-16 w-full max-w-4xl mx-auto">
+            <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Recent Donations</h2>
             {isLoading && (
-              <div className="text-center py-4">
-                <p className="text-gray-600">Loading donation history...</p>
-                <div className="mt-2 inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-3">Loading donation history...</p>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             )}
             {error && (
-              <div className="my-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm text-center">
+              <div className="my-4 p-4 bg-red-50 border border-red-300 text-red-700 rounded-md text-sm text-center max-w-lg mx-auto">
                 <p>Error loading donations: {error}</p>
               </div>
             )}
             {!isLoading && !error && donations.length === 0 && (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-center text-gray-700">No recent donations found.</p>
+              <div className="bg-gray-50 p-6 rounded-lg text-center max-w-lg mx-auto border border-gray-200">
+                <p className="text-gray-700">No recent donations found.</p>
+                <p className="text-sm text-gray-500 mt-2">Be the first to contribute!</p>
               </div>
             )}
             {!isLoading && !error && donations.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-4 max-w-3xl mx-auto">
                 {donations.map((donation) => (
                   <div key={donation.id} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -269,18 +289,6 @@ export default function DonatePage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Wallet Instructions */}
-          <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-xl shadow-md border border-green-100 mb-10">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">How to Donate</h2>
-            <ol className="list-decimal list-inside space-y-3 text-left text-gray-700">
-              <li>Open your XRP Ledger wallet app (Xumm, Crossmark, etc.)</li>
-              <li>Scan the QR code above</li>
-              <li>Confirm the transaction details in your wallet</li>
-              <li>Submit the payment</li>
-            </ol>
-            <p className="mt-6 text-sm text-gray-600">All donations are transparent and trackable on the XRP Ledger.</p>
           </div>
         </div>
       </main>

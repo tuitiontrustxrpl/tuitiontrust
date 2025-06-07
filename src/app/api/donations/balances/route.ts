@@ -10,7 +10,7 @@ const RLUSD_CURRENCY_CODE = process.env.NEXT_PUBLIC_RLUSD_CURRENCY_CODE
     : 'RLUSD'; // Fallback if not set or conversion fails, though it should be set.
 console.log(`API_DONATION_BALANCES: Derived RLUSD_CURRENCY_CODE for comparison: ${RLUSD_CURRENCY_CODE}`);
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   if (!DONATION_ADDRESS) {
     console.error('API_DONATION_BALANCES: Donation address (NEXT_PUBLIC_DONATION_ADDRESS) is not configured.');
     return NextResponse.json({ error: 'Donation address is not configured.' }, { status: 500 });
@@ -40,10 +40,11 @@ export async function GET(req: NextRequest) {
         account: DONATION_ADDRESS,
         ledger_index: 'validated',
       });
-      xrpBalance = xrpl.dropsToXrp(accountInfo.result.account_data.Balance);
+      xrpBalance = String(xrpl.dropsToXrp(accountInfo.result.account_data.Balance));
       console.log(`API_DONATION_BALANCES: XRP Balance for ${DONATION_ADDRESS}: ${xrpBalance}`);
-    } catch (e: any) {
-      console.error(`API_DONATION_BALANCES: Error fetching XRP balance for ${DONATION_ADDRESS}:`, e.message);
+    } catch (e: unknown) {
+      const xrpErrorMessage = e instanceof Error ? e.message : 'An unknown error occurred fetching XRP balance';
+      console.error(`API_DONATION_BALANCES: Error fetching XRP balance for ${DONATION_ADDRESS}:`, xrpErrorMessage);
       // Potentially return partial data or specific error for XRP balance
     }
 
@@ -70,8 +71,9 @@ export async function GET(req: NextRequest) {
       }
       console.log(`API_DONATION_BALANCES: RLUSD Balance for ${DONATION_ADDRESS} from issuer ${RLUSD_ISSUER_ADDRESS}: ${rlusdBalance}`);
 
-    } catch (e: any) {
-      console.error(`API_DONATION_BALANCES: Error fetching RLUSD balance for ${DONATION_ADDRESS}:`, e.message);
+    } catch (e: unknown) {
+      const rlusdErrorMessage = e instanceof Error ? e.message : 'An unknown error occurred fetching RLUSD balance';
+      console.error(`API_DONATION_BALANCES: Error fetching RLUSD balance for ${DONATION_ADDRESS}:`, rlusdErrorMessage);
       // Potentially return partial data or specific error for RLUSD balance
     }
 
@@ -85,10 +87,11 @@ export async function GET(req: NextRequest) {
       account: DONATION_ADDRESS,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const generalErrorMessage = error instanceof Error ? error.message : 'An unknown general error occurred';
     console.error(`API_DONATION_BALANCES: General error for ${DONATION_ADDRESS}:`, error);
     return NextResponse.json(
-      { error: 'Failed to fetch wallet balances.', details: error.message },
+      { error: 'Failed to fetch wallet balances.', details: generalErrorMessage },
       { status: 500 }
     );
   } finally {

@@ -15,6 +15,7 @@ interface TransactionData {
 }
 
 export async function GET(request: NextRequest) {
+  console.log('ACCOUNT_TX_API: GET function started.');
   const searchParams = request.nextUrl.searchParams;
   const accountAddress = searchParams.get('address');
 
@@ -26,12 +27,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid XRPL address provided' }, { status: 400 });
   }
 
+  console.log(`ACCOUNT_TX_API: Using XRPL_RPC_URL: ${XRPL_RPC_URL}`);
   const client = new xrpl.Client(XRPL_RPC_URL);
 
   try {
+    console.log('ACCOUNT_TX_API: Attempting to connect to XRPL client...');
     await client.connect();
     console.log(`ACCOUNT_TX_API: Connected to XRPL to fetch transactions for ${accountAddress}`);
 
+    console.log('ACCOUNT_TX_API: Connected. Attempting to request account_tx...');
     const response = await client.request({
       command: 'account_tx',
       account: accountAddress,
@@ -114,10 +118,12 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    console.log('ACCOUNT_TX_API: Account_tx request successful. Processing transactions...');
     console.log(`ACCOUNT_TX_API: Processed and returning ${transactions.length} transactions for ${accountAddress}.`);
     return NextResponse.json(transactions);
 
   } catch (error: any) {
+    console.log('ACCOUNT_TX_API: An error occurred in the GET function.');
     console.error(`ACCOUNT_TX_API: Error fetching transactions for ${accountAddress}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch transactions from XRPL', details: error.message },
