@@ -2,6 +2,8 @@
 
 TuitionTrust is a modern web platform that enables transparent, blockchain-backed donations to educational institutions via the XRP Ledger (XRPL). Donors can contribute using XRP or RLUSD, view donation history, and schools can register using Decentralized Identifiers (DIDs).
 
+https://www.loom.com/share/146a54b61f414079be74ec868c9abd55?sid=79c3a93c-e9ef-44af-bfc1-08bdc2110343
+
 ## Canva Presentation
 
 https://www.canva.com/design/DAGpup6tbyI/Lm2CqFq0QFZyrtR_PAs51Q/view?utm_content=DAGpup6tbyI&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hc517d2ac43#7
