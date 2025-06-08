@@ -405,7 +405,7 @@ export default function SchoolProfilePage() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="font-medium text-green-700">
-                                  {tx.amount} <span className="text-xs font-bold">{tx.currency}</span>
+                                  {tx.amount} <span className="text-xs font-bold">{tx.currency === '524C555344000000000000000000000000000000' ? 'RLUSD' : tx.currency}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">

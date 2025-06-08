@@ -17,25 +17,25 @@ export default function QrCodeDisplay({ value }: QrCodeDisplayProps) {
   }, []);
 
   return (
-    <div className="relative h-72 sm:h-80 md:h-96 w-full rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-gradient-to-br from-green-200 via-amber-100 to-green-100 p-6 transform transition-all duration-300 hover:scale-[1.02]">
+    <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-gradient-to-br from-green-200 via-amber-100 to-green-100 transform transition-all duration-300 hover:scale-[1.02] mx-auto flex-grow">
       {/* Decorative Elements */}
       <div className="absolute -top-10 -left-10 w-32 h-32 bg-green-300 rounded-full opacity-20"></div>
       <div className="absolute -bottom-8 -right-8 w-36 h-36 bg-amber-300 rounded-full opacity-20"></div>
       
       <div className="relative z-10 text-center">
-        <div className="bg-white p-5 rounded-2xl inline-block shadow-lg border-2 border-green-100 transform transition-transform hover:rotate-1">
+        <div className="bg-white p-2 sm:p-5 rounded-2xl block mx-auto shadow-lg border-2 border-green-100 transform transition-transform hover:rotate-1 w-full aspect-square">
           {!isClient ? (
             // Server-side placeholder with same dimensions
-            <div className="w-[200px] h-[200px] bg-gray-100 flex items-center justify-center">
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center aspect-square"> {/* Keep fixed size for placeholder */} 
               <div className="animate-pulse text-sm text-gray-400">QR Code</div>
             </div>
           ) : (
             <QRCodeCanvas
               value={value}
-              size={200}
               level="H"
               includeMargin={false}
               fgColor="#047857" // Green-700 color
+              style={{ width: '100%', height: 'auto' }} // This makes it responsive
             />
           )}
         </div>

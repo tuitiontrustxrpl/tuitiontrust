@@ -1,24 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TuitionTrust
 
-## Getting Started
+TuitionTrust is a modern web platform that enables transparent, blockchain-backed donations to educational institutions via the XRP Ledger (XRPL). Donors can contribute using XRP or RLUSD, view donation history, and schools can register using Decentralized Identifiers (DIDs).
 
-First, run the development server:
+## Features
+
+- **Donate via QR Code:** Instantly donate XRP or RLUSD using a scannable QR code (responsive for mobile and desktop).
+- **Live Donation Tracking:** View the latest 10 donations directly from the XRPL, including sender, amount, currency, and transaction link.
+- **School Registration:** Schools can register by submitting a DID and XRPL address. DID types supported: `did:web` and `did:key`.
+- **Verified Schools Directory:** Browse a list of registered schools and their profiles.
+- **Balances API:** Serverless API endpoints fetch XRP and RLUSD balances using XRPL HTTP RPC (no WebSocket dependency).
+- **Modern UI:** Built with Next.js (App Router), TypeScript, and Tailwind CSS for a fast and beautiful experience.
+- **Supabase Integration:** (Planned) For storing school data and off-ledger verification workflows.
+
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router, TypeScript)
+- **Styling:** Tailwind CSS
+- **XRPL Integration:** [xrpl.js](https://github.com/XRPLF/xrpl.js), HTTP RPC endpoints
+- **QR Codes:** [qrcode.react](https://github.com/zpao/qrcode.react)
+- **Backend:** Supabase (for school verification and storage, planned)
+- **Deployment:** Netlify/Windsurf (see `windsurf_deployment.yaml`)
+
+## Project Structure
+
+```
+/tuitiontrust
+├── src
+│   ├── app
+│   │   ├── api                # Serverless API routes (balances, donations, XRPL queries, etc.)
+│   │   ├── donate             # Donation page (QR, preset buttons, transaction history)
+│   │   ├── donations          # Donations history page
+│   │   ├── schools            # School registration and directory
+│   │   ├── layout.tsx         # App layout
+│   │   ├── page.tsx           # Home page (hero, QR, intro)
+│   │   └── globals.css        # Tailwind CSS
+│   ├── components             # Navbar, Footer, QrCodeDisplay, etc.
+│   └── lib                    # supabaseClient.ts
+├── public                     # Static assets (SVGs, favicon, etc.)
+├── package.json               # Dependencies and scripts
+├── .env.local                 # Environment variables (see below)
+├── windsurf_deployment.yaml   # Deployment config
+└── ...
+```
+
+## Environment Variables
+
+Create a `.env.local` file in the project root with the following keys:
+
+```
+NEXT_PUBLIC_DONATION_ADDRESS=...          # XRPL wallet address for donations
+NEXT_PUBLIC_RLUSD_ISSUER_ADDRESS=...      # RLUSD issuer address
+NEXT_PUBLIC_RLUSD_CURRENCY_CODE=...       # RLUSD currency code (hex)
+XRPL_HTTP_RPC_URL=https://s.altnet.rippletest.net:51234/  # XRPL HTTP RPC endpoint
+SUPABASE_URL=...                          # (optional, planned)
+SUPABASE_ANON_KEY=...                     # (optional, planned)
+```
+
+## Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Deployment is configured via `windsurf_deployment.yaml` and Netlify. To deploy:
+
+1. Commit your changes.
+2. Deploy using the Windsurf CLI or Netlify dashboard.
+3. The site will be live at: https://tuitiontrust.windsurf.build
+
+## Contributing
+
+Pull requests and issues are welcome! Please open an issue for bugs or feature requests.
+
+## License
+
+MIT
+
 
 ## Learn More
 
@@ -28,9 +97,3 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

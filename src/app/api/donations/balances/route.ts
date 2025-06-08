@@ -1,8 +1,9 @@
 // src/app/api/donations/balances/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import * as xrpl from 'xrpl';
+const XRPL_HTTP_RPC_URL = process.env.XRPL_HTTP_RPC_URL || 'https://s.altnet.rippletest.net:51234'; // Placeholder for HTTP RPC endpoint
 
-const XRPL_NODE_URL = process.env.XRPL_NODE_URL || 'wss://s.altnet.rippletest.net:51233';
+// xrpl.js is still used for utility functions like dropsToXrp and convertHexToString
+import * as xrpl from 'xrpl';
 const DONATION_ADDRESS = process.env.NEXT_PUBLIC_DONATION_ADDRESS;
 const RLUSD_ISSUER_ADDRESS = process.env.NEXT_PUBLIC_RLUSD_ISSUER_ADDRESS;
 const RLUSD_CURRENCY_CODE = process.env.NEXT_PUBLIC_RLUSD_CURRENCY_CODE 
@@ -25,23 +26,39 @@ export async function GET() {
   }
 
 
-  const client = new xrpl.Client(XRPL_NODE_URL);
   let xrpBalance = '0';
   let rlusdBalance = '0';
 
   try {
-    await client.connect();
-    console.log(`API_DONATION_BALANCES: Connected to XRPL for ${DONATION_ADDRESS}`);
-
     // Fetch XRP balance
     try {
-      const accountInfo = await client.request({
-        command: 'account_info',
-        account: DONATION_ADDRESS,
-        ledger_index: 'validated',
+      const response = await fetch(XRPL_HTTP_RPC_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          method: 'account_info',
+          params: [
+            {
+              account: DONATION_ADDRESS,
+              ledger_index: 'validated',
+            },
+          ],
+        }),
       });
-      xrpBalance = String(xrpl.dropsToXrp(accountInfo.result.account_data.Balance));
-      console.log(`API_DONATION_BALANCES: XRP Balance for ${DONATION_ADDRESS}: ${xrpBalance}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.result && data.result.account_data) {
+        xrpBalance = String(xrpl.dropsToXrp(data.result.account_data.Balance));
+        console.log(`API_DONATION_BALANCES: XRP Balance for ${DONATION_ADDRESS}: ${xrpBalance}`);
+      } else if (data.error) {
+        throw new Error(data.error_message || data.error);
+      }
     } catch (e: unknown) {
       const xrpErrorMessage = e instanceof Error ? e.message : 'An unknown error occurred fetching XRP balance';
       console.error(`API_DONATION_BALANCES: Error fetching XRP balance for ${DONATION_ADDRESS}:`, xrpErrorMessage);
@@ -50,17 +67,32 @@ export async function GET() {
 
     // Fetch RLUSD balance
     try {
-      const accountLines = await client.request({
-        command: 'account_lines',
-        account: DONATION_ADDRESS,
-        peer: RLUSD_ISSUER_ADDRESS, // Filter by issuer
-        ledger_index: 'validated',
+      const response = await fetch(XRPL_HTTP_RPC_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          method: 'account_lines',
+          params: [
+            {
+              account: DONATION_ADDRESS,
+              peer: RLUSD_ISSUER_ADDRESS, // Filter by issuer
+              ledger_index: 'validated',
+            },
+          ],
+        }),
       });
 
-      console.log('API_DONATION_BALANCES: Full account_lines.result.lines:', JSON.stringify(accountLines.result.lines, null, 2));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      const rlusdLine = accountLines.result.lines.find(
-        (line) => line.currency === process.env.NEXT_PUBLIC_RLUSD_CURRENCY_CODE && line.account === RLUSD_ISSUER_ADDRESS
+      const data = await response.json();
+      console.log('API_DONATION_BALANCES: Full account_lines.result.lines:', JSON.stringify(data.result.lines, null, 2));
+
+      const rlusdLine = data.result.lines.find(
+        (line: any) => line.currency === process.env.NEXT_PUBLIC_RLUSD_CURRENCY_CODE && line.account === RLUSD_ISSUER_ADDRESS
       );
 
       if (rlusdLine) {
@@ -70,7 +102,6 @@ export async function GET() {
         console.log(`API_DONATION_BALANCES: No RLUSD line found matching currency '${RLUSD_CURRENCY_CODE}' and issuer '${RLUSD_ISSUER_ADDRESS}'.`);
       }
       console.log(`API_DONATION_BALANCES: RLUSD Balance for ${DONATION_ADDRESS} from issuer ${RLUSD_ISSUER_ADDRESS}: ${rlusdBalance}`);
-
     } catch (e: unknown) {
       const rlusdErrorMessage = e instanceof Error ? e.message : 'An unknown error occurred fetching RLUSD balance';
       console.error(`API_DONATION_BALANCES: Error fetching RLUSD balance for ${DONATION_ADDRESS}:`, rlusdErrorMessage);
@@ -95,9 +126,6 @@ export async function GET() {
       { status: 500 }
     );
   } finally {
-    if (client.isConnected()) {
-      await client.disconnect();
-      console.log(`API_DONATION_BALANCES: Disconnected from XRPL for ${DONATION_ADDRESS}`);
-    }
+    // No client to disconnect from in HTTP mode
   }
 }

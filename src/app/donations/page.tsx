@@ -62,8 +62,17 @@ const DonationsPage: React.FC = () => {
       try {
         const response = await fetch('/api/donations/outgoing-to-verified-schools');
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+          // If 502, try fallback
+          if (response.status === 502) {
+            console.warn('WSS API failed with 502, attempting JSON-RPC fallback');
+            // Fallback: direct JSON-RPC to XRPL
+            const fallbackData = await fetchXRPLTransactionsFallback();
+            setTransactions(fallbackData);
+            return;
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+          }
         }
         const data: VerifiedSchoolTransaction[] = await response.json();
         setTransactions(data);
@@ -72,6 +81,67 @@ const DonationsPage: React.FC = () => {
         setErrorTransactions(error.message || 'Failed to load transactions.');
       } finally {
         setLoadingTransactions(false);
+      }
+    };
+
+    // Fallback: fetch transactions directly from XRPL JSON-RPC
+    const fetchXRPLTransactionsFallback = async (): Promise<VerifiedSchoolTransaction[]> => {
+      try {
+        const address = donationWalletAddress;
+        if (!address) throw new Error('Donation wallet address is not set.');
+        // XRPL Testnet JSON-RPC endpoint
+        const XRPL_RPC_URL = 'https://s.altnet.rippletest.net:51234';
+        // Request last 10 transactions for the donation wallet
+        const reqBody = {
+          method: 'account_tx',
+          params: [
+            {
+              account: address,
+              ledger_index_min: -1,
+              ledger_index_max: -1,
+              limit: 10,
+              binary: false,
+              forward: false
+            }
+          ]
+        };
+        const rpcRes = await fetch(XRPL_RPC_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqBody),
+        });
+        if (!rpcRes.ok) throw new Error('XRPL JSON-RPC request failed');
+        const rpcJson = await rpcRes.json();
+        // Parse and filter for successful Payment transactions
+        const txs = (rpcJson.result?.transactions || [])
+          .filter((entry: any) => entry.tx.TransactionType === 'Payment' && entry.meta?.TransactionResult === 'tesSUCCESS')
+          .map((entry: any) => {
+            // Amount parsing
+            let amount = '0';
+            let currency = 'XRP';
+            const delivered = entry.meta?.delivered_amount;
+            if (typeof delivered === 'string') {
+              // XRP in drops
+              amount = (parseInt(delivered, 10) / 1_000_000).toString();
+              currency = 'XRP';
+            } else if (typeof delivered === 'object' && delivered !== null) {
+              amount = delivered.value;
+              currency = delivered.currency;
+            }
+            return {
+              id: entry.tx.hash,
+              timestamp: entry.tx.date ? new Date((entry.tx.date + 946684800) * 1000).toISOString() : 'N/A',
+              amount,
+              currency,
+              destinationAddress: entry.tx.Destination,
+              destinationSchoolName: undefined, // Not available from XRPL directly
+              explorerUrl: `https://testnet.xrpl.org/transactions/${entry.tx.hash}`,
+            };
+          });
+        return txs;
+      } catch (e: any) {
+        setErrorTransactions('XRPL fallback failed: ' + (e.message || e.toString()));
+        return [];
       }
     };
 

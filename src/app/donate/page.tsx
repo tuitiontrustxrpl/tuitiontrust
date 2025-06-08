@@ -126,7 +126,7 @@ export default function DonatePage() {
             </p>
           </div>
 
-          {/* How to Donate Instructions */}
+          {/* How to Donate Instructions 
           <div className="bg-gradient-to-br from-green-50 to-white p-6 rounded-lg shadow-sm border border-green-100 mb-8 max-w-2xl mx-auto">
             <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800">How to Donate</h2>
             <ol className="list-decimal pl-5 space-y-2 text-gray-700">
@@ -136,7 +136,7 @@ export default function DonatePage() {
               <li>Submit the payment</li>
             </ol>
             <p className="mt-4 text-sm text-gray-600 text-center">All donations are transparent and trackable on the XRP Ledger.</p>
-          </div>
+          </div> */}
           
           {/* Preset Donation Buttons */}
           <div className="my-8 w-full max-w-lg mx-auto">

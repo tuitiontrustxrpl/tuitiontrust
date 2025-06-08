@@ -10,7 +10,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-green-50 via-white to-white pt-16 pb-24 md:pt-24 md:pb-32 overflow-hidden">
+      <section className="relative bg-gradient-to-b from-green-50 via-white to-white pt-8 pb-16 md:pt-24 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden z-0">
           <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-b from-green-100 to-green-50 opacity-20 transform -skew-x-12 animate-pulse"></div>
           <div className="absolute left-0 bottom-0 w-1/3 h-64 bg-gradient-to-r from-amber-100 to-amber-50 opacity-30 transform skew-x-12"></div>
